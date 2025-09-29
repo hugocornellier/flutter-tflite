@@ -35,7 +35,7 @@ final DynamicLibrary _dylib = () {
 
   if (Platform.isLinux) {
     return DynamicLibrary.open(
-        '${Directory(Platform.resolvedExecutable).parent.path}/libtensorflowlite_c-linux.so');
+        '${Directory(Platform.resolvedExecutable).parent.path}/lib/libtensorflowlite_c-linux.so');
   }
   if (Platform.isWindows) {
     return DynamicLibrary.open(
