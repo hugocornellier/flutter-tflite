@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-name: tflite_flutter
+name: tflite_flutter_custom
 description: TensorFlow Lite Flutter plugin provides an easy, flexible, and fast Dart API to integrate TFLite models in flutter apps across mobile and desktop platforms.
-version: 0.11.0
+version: 1.0.0
 homepage: https://github.com/tensorflow/flutter-tflite
 
 environment:

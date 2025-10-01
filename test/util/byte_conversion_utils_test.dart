@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:tflite_flutter_custom/tflite_flutter.dart';
 
 void main() {
   group('convertObjectToBytes and convertBytesToObject', () {
