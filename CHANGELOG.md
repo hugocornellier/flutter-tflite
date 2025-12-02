@@ -1,3 +1,6 @@
+## 1.1.0
+* Add optional parameter to dynamically set the .dylib path
+
 ## 1.0.3
 * Update fork to [flutter_tflite v0.12.1](https://pub.dev/packages/tflite_flutter/changelog)
 
