@@ -1,3 +1,6 @@
+## 1.2.0
+* Custom ops support
+
 ## 1.1.0
 * Add optional parameter to dynamically set the .dylib path
 

@@ -69,6 +69,21 @@ class InterpreterOptions {
     tfliteBinding.TfLiteInterpreterOptionsAddDelegate(_options, delegate.base);
   }
 
+  /// Registers MediaPipe custom ops (like Convolution2DTransposeBias).
+  ///
+  /// Call this before creating an interpreter for MediaPipe models that use
+  /// custom operations (e.g., Selfie Segmentation).
+  ///
+  /// Example:
+  /// ```dart
+  /// final options = InterpreterOptions();
+  /// options.addMediaPipeCustomOps();
+  /// final interpreter = Interpreter.fromAsset('model.tflite', options: options);
+  /// ```
+  void addMediaPipeCustomOps() {
+    TransposeConvBiasOp.registerWithOptions(_options);
+  }
+
 // Unimplemented:
 // TfLiteInterpreterOptionsSetErrorReporter
 // TODO: TfLiteInterpreterOptionsSetErrorReporter

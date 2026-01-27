@@ -61,12 +61,15 @@ DynamicLibrary _loadDesktopLibrary() {
   // Strategy 2: Try production app bundle path
   String productionPath;
   if (Platform.isMacOS) {
-    productionPath = '${Directory(Platform.resolvedExecutable).parent.parent.path}/resources/libtensorflowlite_c-mac.dylib';
+    productionPath =
+        '${Directory(Platform.resolvedExecutable).parent.parent.path}/resources/libtensorflowlite_c-mac.dylib';
   } else if (Platform.isLinux) {
-    productionPath = '${Directory(Platform.resolvedExecutable).parent.path}/lib/libtensorflowlite_c-linux.so';
+    productionPath =
+        '${Directory(Platform.resolvedExecutable).parent.path}/lib/libtensorflowlite_c-linux.so';
   } else {
     // Windows
-    productionPath = '${Directory(Platform.resolvedExecutable).parent.path}/libtensorflowlite_c-win.dll';
+    productionPath =
+        '${Directory(Platform.resolvedExecutable).parent.path}/libtensorflowlite_c-win.dll';
   }
 
   attemptedPaths.add('Production path: $productionPath');
@@ -79,12 +82,15 @@ DynamicLibrary _loadDesktopLibrary() {
   // Strategy 3: Try development/testing fallback paths
   String fallbackPath;
   if (Platform.isMacOS) {
-    fallbackPath = '${Directory.current.path}/macos/Frameworks/libtensorflowlite_c-mac.dylib';
+    fallbackPath =
+        '${Directory.current.path}/macos/Frameworks/libtensorflowlite_c-mac.dylib';
   } else if (Platform.isLinux) {
-    fallbackPath = '${Directory.current.path}/linux/lib/libtensorflowlite_c-linux.so';
+    fallbackPath =
+        '${Directory.current.path}/linux/lib/libtensorflowlite_c-linux.so';
   } else {
     // Windows
-    fallbackPath = '${Directory.current.path}/windows/libtensorflowlite_c-win.dll';
+    fallbackPath =
+        '${Directory.current.path}/windows/libtensorflowlite_c-win.dll';
   }
 
   attemptedPaths.add('Fallback path: $fallbackPath');
@@ -96,14 +102,13 @@ DynamicLibrary _loadDesktopLibrary() {
 
   // If all strategies fail, provide a helpful error message
   throw UnsupportedError(
-    'Failed to load TensorFlow Lite library. Attempted paths:\n'
-    '${attemptedPaths.map((p) => '  - $p').join('\n')}\n\n'
-    'Solutions:\n'
-    '  1. For production apps: Ensure native libraries are bundled correctly\n'
-    '  2. For testing: Set TFLITE_LIB_PATH environment variable:\n'
-    '     TFLITE_LIB_PATH=/path/to/library flutter test\n'
-    '  3. For testing: Ensure libraries exist in the project fallback locations'
-  );
+      'Failed to load TensorFlow Lite library. Attempted paths:\n'
+      '${attemptedPaths.map((p) => '  - $p').join('\n')}\n\n'
+      'Solutions:\n'
+      '  1. For production apps: Ensure native libraries are bundled correctly\n'
+      '  2. For testing: Set TFLITE_LIB_PATH environment variable:\n'
+      '     TFLITE_LIB_PATH=/path/to/library flutter test\n'
+      '  3. For testing: Ensure libraries exist in the project fallback locations');
 }
 
 final DynamicLibrary _dylibGpu = () {
