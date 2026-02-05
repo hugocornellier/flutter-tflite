@@ -1,3 +1,6 @@
+## 1.2.2
+* Update litert_version: 1.4.0 → 1.4.1
+
 ## 1.2.1
 * Update TensorFlowLiteSwift to 2.17.0
 
