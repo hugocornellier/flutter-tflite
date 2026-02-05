@@ -1,3 +1,6 @@
+## 1.2.1
+* Update TensorFlowLiteSwift to 2.17.0
+
 ## 1.2.0
 * Custom ops support
 
