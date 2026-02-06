@@ -1,3 +1,6 @@
+## 1.2.4
+* Improved .dylib auto-bundling on MacOS
+
 ## 1.2.3
 * Add custom ops support for iOS/Android
 * Add repository field to pubspec.yaml

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 
@@ -104,13 +105,16 @@ DynamicLibrary _loadDesktopLibrary() {
       // Continue
     }
 
-    // Strategy 4: Development/testing fallback path
-    final fallbackPath = '${Directory.current.path}/macos/Frameworks/$libName';
-    attemptedPaths.add('Fallback path: $fallbackPath');
-    try {
-      return DynamicLibrary.open(fallbackPath);
-    } catch (e) {
-      // Continue
+    // Strategy 4: Resolve from tflite_flutter_custom package source (for flutter test)
+    final packagePath = _resolvePackagePath('tflite_flutter_custom');
+    if (packagePath != null) {
+      final packageMacosPath = '$packagePath/macos/$libName';
+      attemptedPaths.add('Package source path: $packageMacosPath');
+      try {
+        return DynamicLibrary.open(packageMacosPath);
+      } catch (e) {
+        // Continue
+      }
     }
   } else if (Platform.isLinux) {
     // Linux: Try production and fallback paths
@@ -123,12 +127,16 @@ DynamicLibrary _loadDesktopLibrary() {
       // Continue
     }
 
-    final fallbackPath = '${Directory.current.path}/linux/lib/$libName';
-    attemptedPaths.add('Fallback path: $fallbackPath');
-    try {
-      return DynamicLibrary.open(fallbackPath);
-    } catch (e) {
-      // Continue
+    // Resolve from tflite_flutter_custom package source (for flutter test)
+    final packagePath = _resolvePackagePath('tflite_flutter_custom');
+    if (packagePath != null) {
+      final packageLinuxPath = '$packagePath/linux/lib/$libName';
+      attemptedPaths.add('Package source path: $packageLinuxPath');
+      try {
+        return DynamicLibrary.open(packageLinuxPath);
+      } catch (e) {
+        // Continue
+      }
     }
   } else {
     // Windows: Try production and fallback paths
@@ -141,12 +149,16 @@ DynamicLibrary _loadDesktopLibrary() {
       // Continue
     }
 
-    final fallbackPath = '${Directory.current.path}/windows/$libName';
-    attemptedPaths.add('Fallback path: $fallbackPath');
-    try {
-      return DynamicLibrary.open(fallbackPath);
-    } catch (e) {
-      // Continue
+    // Resolve from tflite_flutter_custom package source (for flutter test)
+    final packagePath = _resolvePackagePath('tflite_flutter_custom');
+    if (packagePath != null) {
+      final packageWindowsPath = '$packagePath/windows/$libName';
+      attemptedPaths.add('Package source path: $packageWindowsPath');
+      try {
+        return DynamicLibrary.open(packageWindowsPath);
+      } catch (e) {
+        // Continue
+      }
     }
   }
 
@@ -159,6 +171,39 @@ DynamicLibrary _loadDesktopLibrary() {
       '  2. For testing: Set TFLITE_LIB_PATH environment variable:\n'
       '     TFLITE_LIB_PATH=/path/to/library flutter test\n'
       '  3. For testing: Ensure libraries exist in the project fallback locations');
+}
+
+/// Resolves the root directory of a Dart package by reading
+/// `.dart_tool/package_config.json`. Returns `null` if the package cannot be
+/// found. This is used during `flutter test` to locate native libraries
+/// bundled inside the tflite_flutter_custom package source tree.
+String? _resolvePackagePath(String packageName) {
+  try {
+    final configFile =
+        File('${Directory.current.path}/.dart_tool/package_config.json');
+    if (!configFile.existsSync()) return null;
+
+    final config = jsonDecode(configFile.readAsStringSync()) as Map;
+    final packages = config['packages'] as List?;
+    if (packages == null) return null;
+
+    for (final pkg in packages) {
+      if (pkg is Map && pkg['name'] == packageName) {
+        final rootUri = pkg['rootUri'] as String?;
+        if (rootUri == null) continue;
+
+        if (rootUri.startsWith('file://')) {
+          return Uri.parse(rootUri).toFilePath();
+        }
+        // rootUri is relative to .dart_tool/ directory
+        final resolved = configFile.parent.uri.resolve(rootUri);
+        return resolved.toFilePath();
+      }
+    }
+  } catch (_) {
+    // Silently fail - this is a best-effort fallback
+  }
+  return null;
 }
 
 final DynamicLibrary _dylibGpu = () {
