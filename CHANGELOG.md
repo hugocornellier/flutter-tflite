@@ -1,3 +1,8 @@
+## 1.2.3
+* Add custom ops support for iOS/Android
+* Add repository field to pubspec.yaml
+* Fix angle bracket warnings in documentation
+
 ## 1.2.2
 * Update litert_version: 1.4.0 → 1.4.1
 

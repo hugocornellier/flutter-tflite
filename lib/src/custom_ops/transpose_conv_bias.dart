@@ -83,9 +83,33 @@ class TransposeConvBiasOp {
 
   /// Attempts to load the custom ops library from various locations.
   static DynamicLibrary? _loadCustomOpsLibrary() {
+    // iOS: Custom ops are statically linked into the app via CocoaPods
+    // Use DynamicLibrary.process() to access symbols from the main executable
+    if (Platform.isIOS) {
+      try {
+        return DynamicLibrary.process();
+      } catch (e) {
+        // Fall back to DynamicLibrary.executable() if process() fails
+        try {
+          return DynamicLibrary.executable();
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+
+    // Android: Custom ops are built as a separate .so via CMake
+    if (Platform.isAndroid) {
+      try {
+        return DynamicLibrary.open('libtflite_custom_ops.so');
+      } catch (e) {
+        return null;
+      }
+    }
+
     final List<String> attemptedPaths = [];
 
-    // Strategy 1: Check for environment variable override
+    // Desktop platforms: Check for environment variable override
     final envPath = Platform.environment['TFLITE_CUSTOM_OPS_PATH'];
     if (envPath != null && envPath.isNotEmpty) {
       attemptedPaths.add('TFLITE_CUSTOM_OPS_PATH: $envPath');
@@ -104,15 +128,15 @@ class TransposeConvBiasOp {
     } else if (Platform.isWindows) {
       libName = 'tflite_custom_ops.dll';
     } else {
-      // Android and iOS don't need this - custom ops are typically built into the app
+      // Unknown platform
       return null;
     }
 
-    // Strategy 2: Try production app bundle path
+    // Desktop: Try production app bundle path
     String productionPath;
     if (Platform.isMacOS) {
       productionPath =
-          '${Directory(Platform.resolvedExecutable).parent.parent.path}/resources/$libName';
+          '${Directory(Platform.resolvedExecutable).parent.parent.path}/Resources/$libName';
     } else if (Platform.isLinux) {
       productionPath =
           '${Directory(Platform.resolvedExecutable).parent.path}/lib/$libName';
@@ -128,21 +152,54 @@ class TransposeConvBiasOp {
       // Continue to fallback paths
     }
 
-    // Strategy 3: Same directory as TFLite library
+    // macOS: Check various locations where CocoaPods puts libraries
     if (Platform.isMacOS) {
-      final fallbackPath = '${Directory.current.path}/macos/$libName';
-      attemptedPaths.add('Fallback path: $fallbackPath');
+      final appBundle = Directory(Platform.resolvedExecutable).parent.parent;
+
+      // Check inside tflite_flutter_custom.framework/Resources
+      // This is where CocoaPods puts s.resources for framework targets
+      final frameworkResourcesPath =
+          '${appBundle.path}/Frameworks/tflite_flutter_custom.framework/Versions/A/Resources/$libName';
+      attemptedPaths.add('Framework Resources path: $frameworkResourcesPath');
       try {
-        return DynamicLibrary.open(fallbackPath);
+        return DynamicLibrary.open(frameworkResourcesPath);
       } catch (e) {
         // Continue
       }
 
-      // Also try the package's macos folder
-      final packagePath = '${Directory.current.path}/macos/Frameworks/$libName';
-      attemptedPaths.add('Package path: $packagePath');
+      // Also check without Versions/A (for symlinked frameworks)
+      final frameworkResourcesPathAlt =
+          '${appBundle.path}/Frameworks/tflite_flutter_custom.framework/Resources/$libName';
+      attemptedPaths
+          .add('Framework Resources path (alt): $frameworkResourcesPathAlt');
       try {
-        return DynamicLibrary.open(packagePath);
+        return DynamicLibrary.open(frameworkResourcesPathAlt);
+      } catch (e) {
+        // Continue
+      }
+
+      // App's Resources directory (fallback)
+      final resourcesPath = '${appBundle.path}/Resources/$libName';
+      attemptedPaths.add('Resources path: $resourcesPath');
+      try {
+        return DynamicLibrary.open(resourcesPath);
+      } catch (e) {
+        // Continue
+      }
+
+      // Frameworks directory (fallback)
+      final frameworksPath = '${appBundle.path}/Frameworks/$libName';
+      attemptedPaths.add('Frameworks path: $frameworksPath');
+      try {
+        return DynamicLibrary.open(frameworksPath);
+      } catch (e) {
+        // Continue
+      }
+
+      final fallbackPath = '${Directory.current.path}/macos/$libName';
+      attemptedPaths.add('Fallback path: $fallbackPath');
+      try {
+        return DynamicLibrary.open(fallbackPath);
       } catch (e) {
         // Continue
       }

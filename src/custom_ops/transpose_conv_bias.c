@@ -19,7 +19,7 @@
 // public TFLite C API structures.
 
 #include "transpose_conv_bias.h"
-#include "../tensorflow_lite/common.h"
+// common.h is already included via transpose_conv_bias.h's platform-specific includes
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -278,6 +278,6 @@ static TfLiteRegistration g_registration = {
     NULL,                          // registration_external
 };
 
-TfLiteRegistration* TfLiteFlutter_RegisterConvolution2DTransposeBias(void) {
+TFLITE_CUSTOM_OPS_EXPORT TfLiteRegistration* TfLiteFlutter_RegisterConvolution2DTransposeBias(void) {
     return &g_registration;
 }

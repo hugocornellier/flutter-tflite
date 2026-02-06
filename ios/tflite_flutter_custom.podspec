@@ -18,10 +18,15 @@ TensorFlow Lite plugin for Flutter apps.
   # paths, so Classes contains a forwarder C file that relatively imports
   # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
-  # s.source_files = 'Classes/**/*'
-  
+
+  # Include Swift plugin and forwarder C file (which #includes the actual sources)
+  s.source_files = 'Classes/**/*'
+
+  # Preserve paths for header includes (these won't be compiled, just available for #include)
+  s.preserve_paths = '../src/tensorflow_lite/**/*.h', '../src/custom_ops/**/*.h'
+
   s.dependency 'Flutter'
-  
+
   tflite_version = '2.17.0'
   s.dependency 'TensorFlowLiteSwift', tflite_version
   s.dependency 'TensorFlowLiteSwift/Metal', tflite_version
@@ -31,6 +36,20 @@ TensorFlow Lite plugin for Flutter apps.
   s.static_framework = true
 
   # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
+  # Define TFLITE_USE_FRAMEWORK_HEADERS for iOS to use TensorFlowLiteC framework headers
+  # GCC_SYMBOLS_PRIVATE_EXTERN=NO ensures C symbols are exported for FFI lookup
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) TFLITE_USE_FRAMEWORK_HEADERS=1',
+    'GCC_SYMBOLS_PRIVATE_EXTERN' => 'NO',
+    'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/../src" "${PODS_TARGET_SRCROOT}/../src/custom_ops"'
+  }
+
+  # -ObjC forces the linker to load all ObjC classes and categories
+  # This also pulls in C code that ObjC classes depend on
+  s.user_target_xcconfig = {
+    'OTHER_LDFLAGS' => '$(inherited) -ObjC'
+  }
   s.swift_version = '5.0'
 end

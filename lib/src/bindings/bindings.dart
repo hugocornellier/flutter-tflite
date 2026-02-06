@@ -40,8 +40,9 @@ final DynamicLibrary _dylib = () {
 ///
 /// This function tries multiple strategies to locate the native library:
 /// 1. Environment variable override (TFLITE_LIB_PATH)
-/// 2. Production app bundle path (for released apps)
-/// 3. Development/testing fallback paths (for flutter test)
+/// 2. Framework Resources path (where CocoaPods puts s.resources)
+/// 3. App bundle Resources path
+/// 4. Development/testing fallback paths (for flutter test)
 ///
 /// This ensures the library works in both production and testing environments.
 DynamicLibrary _loadDesktopLibrary() {
@@ -58,46 +59,95 @@ DynamicLibrary _loadDesktopLibrary() {
     }
   }
 
-  // Strategy 2: Try production app bundle path
-  String productionPath;
+  // Platform-specific library name
+  String libName;
   if (Platform.isMacOS) {
-    productionPath =
-        '${Directory(Platform.resolvedExecutable).parent.parent.path}/resources/libtensorflowlite_c-mac.dylib';
+    libName = 'libtensorflowlite_c-mac.dylib';
   } else if (Platform.isLinux) {
-    productionPath =
-        '${Directory(Platform.resolvedExecutable).parent.path}/lib/libtensorflowlite_c-linux.so';
+    libName = 'libtensorflowlite_c-linux.so';
   } else {
-    // Windows
-    productionPath =
-        '${Directory(Platform.resolvedExecutable).parent.path}/libtensorflowlite_c-win.dll';
+    libName = 'libtensorflowlite_c-win.dll';
   }
 
-  attemptedPaths.add('Production path: $productionPath');
-  try {
-    return DynamicLibrary.open(productionPath);
-  } catch (e) {
-    // Continue to fallback paths if production path fails
-  }
-
-  // Strategy 3: Try development/testing fallback paths
-  String fallbackPath;
+  // macOS: Check various locations where CocoaPods puts libraries
   if (Platform.isMacOS) {
-    fallbackPath =
-        '${Directory.current.path}/macos/Frameworks/libtensorflowlite_c-mac.dylib';
-  } else if (Platform.isLinux) {
-    fallbackPath =
-        '${Directory.current.path}/linux/lib/libtensorflowlite_c-linux.so';
-  } else {
-    // Windows
-    fallbackPath =
-        '${Directory.current.path}/windows/libtensorflowlite_c-win.dll';
-  }
+    final appBundle = Directory(Platform.resolvedExecutable).parent.parent;
 
-  attemptedPaths.add('Fallback path: $fallbackPath');
-  try {
-    return DynamicLibrary.open(fallbackPath);
-  } catch (e) {
-    // All strategies failed
+    // Strategy 2: Check inside tflite_flutter_custom.framework/Resources
+    // This is where CocoaPods puts s.resources for framework targets
+    final frameworkResourcesPath =
+        '${appBundle.path}/Frameworks/tflite_flutter_custom.framework/Versions/A/Resources/$libName';
+    attemptedPaths.add('Framework Resources path: $frameworkResourcesPath');
+    try {
+      return DynamicLibrary.open(frameworkResourcesPath);
+    } catch (e) {
+      // Continue
+    }
+
+    // Also check without Versions/A (for symlinked frameworks)
+    final frameworkResourcesPathAlt =
+        '${appBundle.path}/Frameworks/tflite_flutter_custom.framework/Resources/$libName';
+    attemptedPaths
+        .add('Framework Resources path (alt): $frameworkResourcesPathAlt');
+    try {
+      return DynamicLibrary.open(frameworkResourcesPathAlt);
+    } catch (e) {
+      // Continue
+    }
+
+    // Strategy 3: App bundle Resources directory
+    final resourcesPath = '${appBundle.path}/Resources/$libName';
+    attemptedPaths.add('App Resources path: $resourcesPath');
+    try {
+      return DynamicLibrary.open(resourcesPath);
+    } catch (e) {
+      // Continue
+    }
+
+    // Strategy 4: Development/testing fallback path
+    final fallbackPath = '${Directory.current.path}/macos/Frameworks/$libName';
+    attemptedPaths.add('Fallback path: $fallbackPath');
+    try {
+      return DynamicLibrary.open(fallbackPath);
+    } catch (e) {
+      // Continue
+    }
+  } else if (Platform.isLinux) {
+    // Linux: Try production and fallback paths
+    final productionPath =
+        '${Directory(Platform.resolvedExecutable).parent.path}/lib/$libName';
+    attemptedPaths.add('Production path: $productionPath');
+    try {
+      return DynamicLibrary.open(productionPath);
+    } catch (e) {
+      // Continue
+    }
+
+    final fallbackPath = '${Directory.current.path}/linux/lib/$libName';
+    attemptedPaths.add('Fallback path: $fallbackPath');
+    try {
+      return DynamicLibrary.open(fallbackPath);
+    } catch (e) {
+      // Continue
+    }
+  } else {
+    // Windows: Try production and fallback paths
+    final productionPath =
+        '${Directory(Platform.resolvedExecutable).parent.path}/$libName';
+    attemptedPaths.add('Production path: $productionPath');
+    try {
+      return DynamicLibrary.open(productionPath);
+    } catch (e) {
+      // Continue
+    }
+
+    final fallbackPath = '${Directory.current.path}/windows/$libName';
+    attemptedPaths.add('Fallback path: $fallbackPath');
+    try {
+      return DynamicLibrary.open(fallbackPath);
+    } catch (e) {
+      // Continue
+    }
   }
 
   // If all strategies fail, provide a helpful error message

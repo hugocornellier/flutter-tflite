@@ -20,11 +20,27 @@
 #ifndef TFLITE_FLUTTER_CUSTOM_TRANSPOSE_CONV_BIAS_H_
 #define TFLITE_FLUTTER_CUSTOM_TRANSPOSE_CONV_BIAS_H_
 
-#include "../tensorflow_lite/common.h"
-#include "../tensorflow_lite/c_api.h"
+// Platform-specific TFLite header includes
+#if (defined(__APPLE__) && TARGET_OS_IOS) || defined(TFLITE_USE_FRAMEWORK_HEADERS)
+// iOS: Use framework headers from CocoaPods
+#include <TensorFlowLiteC/TensorFlowLiteC.h>
+#else
+// Desktop: Use headers from local path (set via CMake/header search paths)
+#include "tensorflow_lite/common.h"
+#include "tensorflow_lite/c_api.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+// Symbol export for dynamic lookup via FFI
+// 'used' prevents linker from stripping the symbol even if unreferenced
+// 'visibility' makes it visible for dynamic lookup
+#if defined(_WIN32)
+#define TFLITE_CUSTOM_OPS_EXPORT __declspec(dllexport)
+#else
+#define TFLITE_CUSTOM_OPS_EXPORT __attribute__((used, visibility("default")))
 #endif
 
 // Returns the TfLiteRegistration for the Convolution2DTransposeBias custom op.
@@ -35,7 +51,7 @@ extern "C" {
 //   final registration = tfliteBinding.TfLiteFlutter_RegisterConvolution2DTransposeBias();
 //   tfliteBinding.TfLiteInterpreterOptionsAddCustomOp(
 //     options, "Convolution2DTransposeBias".toNativeUtf8(), registration, 1, 1);
-TfLiteRegistration* TfLiteFlutter_RegisterConvolution2DTransposeBias(void);
+TFLITE_CUSTOM_OPS_EXPORT TfLiteRegistration* TfLiteFlutter_RegisterConvolution2DTransposeBias(void);
 
 #ifdef __cplusplus
 }

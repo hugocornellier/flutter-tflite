@@ -11,9 +11,9 @@ set(SOURCES
 # Create shared library
 add_library(tflite_custom_ops SHARED ${SOURCES})
 
-# Include directories
+# Include directories - set to src/ so we can use "tensorflow_lite/common.h" style includes
 target_include_directories(tflite_custom_ops PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../tensorflow_lite
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 # Platform-specific settings
