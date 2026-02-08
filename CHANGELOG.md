@@ -1,3 +1,7 @@
+## 1.2.5
+* Fix Android build: resolve undefined symbol TfLiteIntArrayCreate linker error
+* Bump Android minSdkVersion from 19 to 21 (required by NDK 27+)
+
 ## 1.2.4
 * Improved .dylib auto-bundling on MacOS
 

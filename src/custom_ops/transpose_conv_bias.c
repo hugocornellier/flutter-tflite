@@ -164,7 +164,14 @@ static TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     output_width = stride_width * (in_width - 1) + filter_width - padding_width;
 
     // Resize output tensor
-    TfLiteIntArray* output_shape = TfLiteIntArrayCreate(4);
+    // Allocate TfLiteIntArray manually to avoid linking against TFLite runtime
+    // (TfLiteIntArrayCreate is not available when building as a standalone .so)
+    TfLiteIntArray* output_shape = (TfLiteIntArray*)malloc(sizeof(int) + sizeof(int) * 4);
+    if (!output_shape) {
+        context->ReportError(context, "Failed to allocate output shape");
+        return kTfLiteError;
+    }
+    output_shape->size = 4;
     output_shape->data[0] = input->dims->data[0];  // batch
     output_shape->data[1] = output_height;
     output_shape->data[2] = output_width;
